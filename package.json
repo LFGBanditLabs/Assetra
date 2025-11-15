@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@reown/appkit": "^1.8.12",
-    "@reown/appkit-adapter-wagmi": "^1.8.12",
+    "@reown/appkit": "^1.8.14",
+    "@reown/appkit-adapter-wagmi": "^1.8.14",
     "@tanstack/react-query": "^5.90.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -22,8 +22,8 @@
     "react-dom": "19.2.0",
     "react-hook-form": "^7.66.0",
     "tailwind-merge": "^3.3.1",
-    "viem": "^2.38.5",
-    "wagmi": "^2.19.2",
+    "viem": "^2.39.0",
+    "wagmi": "^2.19.4",
     "zod": "^4.1.12"
   },
   "devDependencies": {
