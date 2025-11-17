@@ -2,10 +2,10 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
  * @title AssetBridgeSource
@@ -101,7 +101,7 @@ contract AssetBridgeSource is Initializable, AccessControlUpgradeable, PausableU
         require(to != address(0), "Bridge: bad recipient");
         _checkRateLimit(msg.sender, tokenIds.length);
 
-        IERC721Upgradeable erc721 = IERC721Upgradeable(token);
+        IERC721 erc721 = IERC721(token);
         for (uint256 i = 0; i < tokenIds.length; i++) {
             // user must approve this contract beforehand
             erc721.transferFrom(msg.sender, address(this), tokenIds[i]);
