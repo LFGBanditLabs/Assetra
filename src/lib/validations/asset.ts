@@ -8,13 +8,15 @@ export const createAssetSchema = z.object({
   totalShares: z.number().int().positive(),
   ipfsHash: z.string().min(1),
   location: z.string().optional(),
+  tokenId: z.number().int().nonnegative().optional(),
+  contractAddress: z.string().optional(),
 });
 
 export const updateAssetSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   description: z.string().min(10).max(5000).optional(),
   assetValue: z.number().positive().optional(),
-  status: z.enum(['PENDING', 'VERIFIED', 'ACTIVE', 'INACTIVE', 'REDEEMED']).optional(),
+  status: z.enum(['PENDING', 'VERIFIED', 'ACTIVE', 'INACTIVE', 'REJECTED', 'REDEEMED']).optional(),
 });
 
 export const assetQuerySchema = z.object({

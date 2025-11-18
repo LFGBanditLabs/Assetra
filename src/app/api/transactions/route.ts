@@ -4,6 +4,7 @@ import { createTransactionSchema, transactionQuerySchema } from '@/lib/validatio
 import { handleApiError } from '@/lib/utils/apiError';
 import { logger } from '@/lib/utils/logger';
 import { rateLimit } from '@/lib/middleware/rateLimit';
+import { resolveRequestUser } from '@/lib/utils/requestUser';
 
 export async function GET(req: NextRequest) {
   try {
@@ -65,8 +66,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createTransactionSchema.parse(body);
 
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
+    const user = await resolveRequestUser(req);
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -76,11 +77,11 @@ export async function POST(req: NextRequest) {
     const transaction = await prisma.transaction.create({
       data: {
         ...data,
-        userId,
+        userId: user.id,
       },
     });
 
-    logger.info('Transaction created', { txHash: transaction.txHash, userId });
+    logger.info('Transaction created', { txHash: transaction.txHash, userId: user.id });
 
     return NextResponse.json({ transaction }, { status: 201 });
   } catch (error) {

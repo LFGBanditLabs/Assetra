@@ -36,7 +36,7 @@ model User {
 // Asset model with lifecycle tracking
 model Asset {
   id                String      @id @default(uuid())
-  tokenId           Int         @unique
+  tokenId           Int?        @unique
   contractAddress   String
   name              String
   description       String      @db.Text
@@ -116,6 +116,7 @@ model Document {
   ipfsHash          String
   fileSize          Int
   mimeType          String
+  version           Int          @default(1)
   uploadedAt        DateTime     @default(now())
   expiresAt         DateTime?
   gatewayUrl        String?
@@ -187,6 +188,7 @@ enum AssetStatus {
   VERIFIED
   ACTIVE
   INACTIVE
+  REJECTED
   REDEEMED
 }
 

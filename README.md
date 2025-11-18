@@ -66,7 +66,17 @@ npm install
 
 ### 3. Configure Environment Variables
 
-Create a .env file using .env.example as reference and fill in your API keys and RPC endpoints.
+Create a `.env` file using `.env.example` as reference and fill in your API keys and RPC endpoints.
+
+New keys required for the end-to-end workflow:
+
+| Variable | Purpose |
+| --- | --- |
+| `WEB3_STORAGE_TOKEN` | Upload legal documents to IPFS / web3.storage |
+| `RESEND_API_KEY` | Send stage-by-stage email notifications |
+| `RESEND_FROM_EMAIL` | From address for notification emails |
+| `ADMIN_API_TOKEN` | Optional secret to read all documents via admin APIs |
+| `NEXT_PUBLIC_ADMIN_WALLET_ADDRESS` | Wallet recorded when admins trigger on-chain deployment |
 
 ### 4. Run the Development Server
 bash
@@ -95,6 +105,12 @@ npx hardhat run scripts/deploy.js
 3. Fractionalise & Trade
    * Split ownership into smaller, tradable tokens.
    * Trade or transfer shares via decentralised exchanges or peer-to-peer.
+
+### End-to-End Workflow (UI)
+
+- **Tokenisation Wizard (`/tokenize`)** — Multi-step form to capture asset data, valuation, document uploads (IPFS), fractional configuration, compliance attestations, and submission review with live status tracking.
+- **Owner Dashboard (`/dashboard`)** — Portfolio analytics with valuation totals, fractional sales, document repository with version history, blockchain transaction monitor, and quick asset lifecycle actions.
+- **Admin Review Console (`/admin/review`)** — Compliance queue for pending submissions, document inspection, info requests, approval/rejection, and smart-contract deployment triggers (logs mint transactions for monitoring).
 
 ---
 

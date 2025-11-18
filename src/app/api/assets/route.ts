@@ -4,6 +4,7 @@ import { createAssetSchema, assetQuerySchema } from '@/lib/validations/asset';
 import { handleApiError } from '@/lib/utils/apiError';
 import { logger } from '@/lib/utils/logger';
 import { rateLimit } from '@/lib/middleware/rateLimit';
+import { resolveRequestUser } from '@/lib/utils/requestUser';
 
 export async function GET(req: NextRequest) {
   try {
@@ -65,9 +66,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = createAssetSchema.parse(body);
 
-    // Get user from request (would normally come from auth middleware)
-    const userId = req.headers.get('x-user-id');
-    if (!userId) {
+    const user = await resolveRequestUser(req);
+
+    if (!user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -77,14 +78,14 @@ export async function POST(req: NextRequest) {
     const asset = await prisma.asset.create({
       data: {
         ...data,
-        tokenId: 0, // Will be set when minted on-chain
-        contractAddress: '', // Will be set when deployed
+        contractAddress: data.contractAddress ?? '',
+        tokenId: data.tokenId ?? null,
         availableShares: data.totalShares,
-        ownerId: userId,
+        ownerId: user.id,
       },
     });
 
-    logger.info('Asset created', { assetId: asset.id, ownerId: userId });
+    logger.info('Asset created', { assetId: asset.id, ownerId: user.id });
 
     return NextResponse.json({ asset }, { status: 201 });
   } catch (error) {
