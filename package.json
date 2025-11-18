@@ -10,22 +10,23 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "compile": "hardhat compile",
+    "test:contracts": "hardhat test",
+    "deploy:baseSepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deploy:base": "hardhat run scripts/deploy.ts --network base"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.22.0",
     "@reown/appkit": "^1.8.14",
     "@reown/appkit-adapter-wagmi": "^1.8.14",
-    "compile": "hardhat compile",
-    "test:contracts": "hardhat test",
-    "deploy:baseSepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
-    "deploy:base": "hardhat run scripts/deploy.ts --network base"
     "@tanstack/react-query": "^5.90.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.552.0",
     "next": "16.0.1",
+    "pinata": "^2.5.1",
     "postcss": "^8.5.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -45,8 +46,8 @@
     "dotenv": "^16.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
-    "prisma": "^5.22.0",
     "hardhat": "^2.19.4",
+    "prisma": "^5.22.0",
     "tailwindcss": "^4.1.16",
     "typescript": "^5"
   },
