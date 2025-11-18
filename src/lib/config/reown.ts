@@ -8,12 +8,12 @@ if (!projectId) {
   throw new Error('NEXT_PUBLIC_REOWN_PROJECT_ID is not set')
 }
 
-// App metadata
+// App metadata - URL must match actual domain for Verify API
 export const metadata = {
   name: 'Assetra',
   description: 'Real World Asset Tokenization Platform - Bridging tangible assets to blockchain',
-  url: 'https://assetra.io', // Update with your actual domain
-  icons: ['https://assetra.io/icon.png'] // Update with your actual icon
+  url: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000',
+  icons: ['https://avatars.githubusercontent.com/u/179229932'] // Default icon
 }
 
 // Supported chains - Base as primary chain

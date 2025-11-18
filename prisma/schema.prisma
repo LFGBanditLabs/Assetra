@@ -1,0 +1,231 @@
+// Prisma schema for Assetra RWA Platform
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with KYC tracking
+model User {
+  id                String   @id @default(uuid())
+  walletAddress     String   @unique
+  email             String?  @unique
+  kycStatus         KYCStatus @default(PENDING)
+  kycVerifiedAt     DateTime?
+  kycExpiresAt      DateTime?
+  riskLevel         RiskLevel @default(NONE)
+  transactionLimit  Decimal   @default(0)
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  ownedAssets       Asset[]   @relation("AssetOwner")
+  shares            Share[]
+  transactions      Transaction[]
+  documents         Document[]
+
+  @@index([walletAddress])
+  @@index([kycStatus])
+}
+
+// Asset model with lifecycle tracking
+model Asset {
+  id                String      @id @default(uuid())
+  tokenId           Int         @unique
+  contractAddress   String
+  name              String
+  description       String      @db.Text
+  assetType         AssetType
+  assetValue        Decimal
+  totalShares       Int
+  availableShares   Int
+  status            AssetStatus @default(PENDING)
+  ipfsHash          String
+  location          String?
+  verifiedAt        DateTime?
+  verifiedBy        String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Owner
+  ownerId           String
+  owner             User        @relation("AssetOwner", fields: [ownerId], references: [id])
+
+  // Relations
+  shares            Share[]
+  transactions      Transaction[]
+  documents         Document[]
+
+  @@index([tokenId])
+  @@index([contractAddress])
+  @@index([status])
+  @@index([assetType])
+}
+
+// Fractional shares model
+model Share {
+  id                String   @id @default(uuid())
+  amount            Int
+  purchasePrice     Decimal
+  currentValue      Decimal
+  purchasedAt       DateTime @default(now())
+
+  // Relations
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  assetId           String
+  asset             Asset    @relation(fields: [assetId], references: [id])
+
+  @@index([userId])
+  @@index([assetId])
+}
+
+// Transaction history model
+model Transaction {
+  id                String          @id @default(uuid())
+  txHash            String          @unique
+  type              TransactionType
+  status            TxStatus        @default(PENDING)
+  amount            Decimal
+  gasUsed           String?
+  blockNumber       Int?
+  timestamp         DateTime        @default(now())
+
+  // Relations
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  assetId           String?
+  asset             Asset?          @relation(fields: [assetId], references: [id])
+
+  @@index([txHash])
+  @@index([userId])
+  @@index([status])
+  @@index([type])
+}
+
+// Document management model
+model Document {
+  id                String       @id @default(uuid())
+  name              String
+  type              DocumentType
+  ipfsHash          String
+  fileSize          Int
+  mimeType          String
+  uploadedAt        DateTime     @default(now())
+  expiresAt         DateTime?
+  gatewayUrl        String?
+  pinStatus         PinStatus    @default(PINNED)
+  contentHash       String?
+
+  // Relations
+  userId            String
+  user              User         @relation(fields: [userId], references: [id])
+  assetId           String?
+  asset             Asset?       @relation(fields: [assetId], references: [id])
+
+  @@index([userId])
+  @@index([assetId])
+  @@index([type])
+  @@index([ipfsHash])
+}
+
+// IPFS Upload tracking model
+model IpfsUpload {
+  id                String       @id @default(uuid())
+  ipfsHash          String       @unique
+  gatewayUrl        String
+  fileSize          Int
+  fileName          String
+  mimeType          String
+  category          FileCategory
+  uploadedAt        DateTime     @default(now())
+  pinStatus         PinStatus    @default(PINNED)
+  metadata          Json?
+  
+  // Relations
+  userId            String
+  assetId           String?
+  
+  @@index([userId])
+  @@index([assetId])
+  @@index([category])
+  @@index([pinStatus])
+}
+
+// Enums
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum RiskLevel {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  BLOCKED
+}
+
+enum AssetType {
+  REAL_ESTATE
+  COMMODITIES
+  ART
+  COLLECTIBLES
+  VEHICLES
+  OTHER
+}
+
+enum AssetStatus {
+  PENDING
+  VERIFIED
+  ACTIVE
+  INACTIVE
+  REDEEMED
+}
+
+enum TransactionType {
+  MINT
+  TRANSFER
+  BURN
+  PURCHASE
+  SALE
+  REVENUE_CLAIM
+}
+
+enum TxStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum DocumentType {
+  KYC_ID
+  KYC_PROOF_ADDRESS
+  ASSET_DEED
+  ASSET_APPRAISAL
+  LEGAL_AGREEMENT
+  CERTIFICATE
+  OTHER
+}
+
+enum PinStatus {
+  PINNED
+  UNPINNED
+  PENDING
+  FAILED
+}
+
+enum FileCategory {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  METADATA
+  CERTIFICATE
+}
