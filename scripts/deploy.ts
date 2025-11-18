@@ -97,18 +97,77 @@ async function main() {
   await timelock.grantRole(EXECUTOR_ROLE, ethers.constants.AddressZero); // Anyone can execute
   console.log("Timelock roles configured");
 
+  // 6. Deploy Bridge Components (MVP)
+  console.log("\n6. Deploying Bridge components...");
+  const network = await ethers.provider.getNetwork();
+  const chainId = Number(network.chainId);
+
+  // 6a. Deploy Wrapped Asset721 (on destination chains)
+  // For MVP/testing we deploy on current network as well
+  const WrappedAsset721 = await ethers.getContractFactory("WrappedAsset721");
+  const wrapped721 = await upgrades.deployProxy(WrappedAsset721, [
+    "Assetra Wrapped RWA",
+    "wARWA",
+  ], {
+    initializer: "initialize",
+    kind: "uups",
+  });
+  await wrapped721.deployed();
+  console.log("WrappedAsset721 deployed to:", wrapped721.address);
+
+  // 6b. Deploy AssetBridgeSource (locks ERC721 on source)
+  const windowSeconds = 3600; // 1 hour
+  const maxPerWindow = 10;    // 10 NFTs per hour per address
+  const AssetBridgeSource = await ethers.getContractFactory("AssetBridgeSource");
+  const bridgeSource = await upgrades.deployProxy(AssetBridgeSource, [
+    chainId,
+    windowSeconds,
+    maxPerWindow,
+  ], {
+    initializer: "initialize",
+    kind: "uups",
+  });
+  await bridgeSource.deployed();
+  console.log("AssetBridgeSource deployed to:", bridgeSource.address);
+
+  // 6c. Deploy AssetBridgeDestination (mints wrapped on destination)
+  const requiredApprovals = 2; // Relayer quorum
+  const AssetBridgeDestination = await ethers.getContractFactory("AssetBridgeDestination");
+  const bridgeDestination = await upgrades.deployProxy(AssetBridgeDestination, [
+    chainId,
+    wrapped721.address,
+    requiredApprovals,
+  ], {
+    initializer: "initialize",
+    kind: "uups",
+  });
+  await bridgeDestination.deployed();
+  console.log("AssetBridgeDestination deployed to:", bridgeDestination.address);
+
+  // Wire roles: destination must be able to mint wrapped; grant deployer a RELAYER_ROLE for testing
+  const MINTER_ROLE = await wrapped721.MINTER_ROLE();
+  await (await wrapped721.grantRole(MINTER_ROLE, bridgeDestination.address)).wait();
+  console.log("Granted MINTER_ROLE on WrappedAsset721 to AssetBridgeDestination");
+
+  const RELAYER_ROLE = await bridgeDestination.RELAYER_ROLE();
+  await (await bridgeDestination.grantRole(RELAYER_ROLE, deployer.address)).wait();
+  console.log("Granted RELAYER_ROLE on AssetBridgeDestination to deployer (testing)");
+
   console.log("\n=== Deployment Complete ===");
   console.log("KYC Registry:", kycRegistry.address);
   console.log("Asset NFT:", assetNFT.address);
   console.log("Fractional Share:", fractionalShare.address);
   console.log("Timelock:", timelock.address);
   console.log("Governance:", governance.address);
+  console.log("WrappedAsset721:", wrapped721.address);
+  console.log("BridgeSource:", bridgeSource.address);
+  console.log("BridgeDestination:", bridgeDestination.address);
 
   // Save deployment addresses
   const fs = require("fs");
   const deploymentInfo = {
-    network: (await ethers.provider.getNetwork()).name,
-    chainId: (await ethers.provider.getNetwork()).chainId,
+    network: network.name,
+    chainId: chainId,
     deployer: deployer.address,
     timestamp: new Date().toISOString(),
     contracts: {
@@ -117,6 +176,9 @@ async function main() {
       fractionalShare: fractionalShare.address,
       timelock: timelock.address,
       governance: governance.address,
+      wrapped721: wrapped721.address,
+      bridgeSource: bridgeSource.address,
+      bridgeDestination: bridgeDestination.address,
     },
   };
 

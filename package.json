@@ -10,17 +10,19 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "compile": "hardhat compile",
+    "test:contracts": "hardhat test",
+    "deploy:baseSepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deploy:base": "hardhat run scripts/deploy.ts --network base"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.22.0",
     "@reown/appkit": "^1.8.14",
     "@reown/appkit-adapter-wagmi": "^1.8.14",
-    "compile": "hardhat compile",
-    "test:contracts": "hardhat test",
-    "deploy:baseSepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
-    "deploy:base": "hardhat run scripts/deploy.ts --network base"
+    "@openzeppelin/contracts-upgradeable": "4.9.6",
+    "@openzeppelin/contracts": "4.9.6",
     "@tanstack/react-query": "^5.90.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -49,8 +51,5 @@
     "hardhat": "^2.19.4",
     "tailwindcss": "^4.1.16",
     "typescript": "^5"
-  },
-  "dependencies-smart-contracts": {
-    "@openzeppelin/contracts-upgradeable": "^5.0.1"
   }
 }

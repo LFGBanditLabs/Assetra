@@ -121,7 +121,7 @@ contract AssetNFT is
      * @param tokenId The ID of the asset to verify
      */
     function verifyAsset(uint256 tokenId) public onlyRole(OPERATOR_ROLE) {
-        require(_exists(tokenId), "AssetNFT: Asset does not exist");
+        require(_existsToken(tokenId), "AssetNFT: Asset does not exist");
 
         assetMetadata[tokenId].isVerified = true;
         assetMetadata[tokenId].lastVerified = block.timestamp;
@@ -139,7 +139,7 @@ contract AssetNFT is
         public
         onlyRole(OPERATOR_ROLE)
     {
-        require(_exists(tokenId), "AssetNFT: Asset does not exist");
+        require(_existsToken(tokenId), "AssetNFT: Asset does not exist");
         require(newValue > 0, "AssetNFT: Value must be positive");
 
         uint256 oldValue = assetMetadata[tokenId].assetValue;
@@ -157,7 +157,7 @@ contract AssetNFT is
         public
         onlyRole(OPERATOR_ROLE)
     {
-        require(_exists(tokenId), "AssetNFT: Asset does not exist");
+        require(_existsToken(tokenId), "AssetNFT: Asset does not exist");
         require(bytes(newIpfsHash).length > 0, "AssetNFT: IPFS hash required");
 
         assetMetadata[tokenId].ipfsHash = newIpfsHash;
@@ -175,7 +175,7 @@ contract AssetNFT is
         view
         returns (AssetMetadata memory)
     {
-        require(_exists(tokenId), "AssetNFT: Asset does not exist");
+        require(_existsToken(tokenId), "AssetNFT: Asset does not exist");
         return assetMetadata[tokenId];
     }
 
@@ -199,19 +199,18 @@ contract AssetNFT is
         override
     {}
 
-    function _exists(uint256 tokenId) internal view returns (bool) {
+    function _existsToken(uint256 tokenId) internal view returns (bool) {
         return _ownerOf(tokenId) != address(0);
     }
 
-    // The following functions are overrides required by Solidity
-
+    // The following functions are overrides required by Solidity (OZ 4.9)
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256 tokenId,
+        uint256 firstTokenId,
         uint256 batchSize
     ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) whenNotPaused {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        super._beforeTokenTransfer(from, to, firstTokenId, batchSize);
     }
 
     function _burn(uint256 tokenId)
@@ -233,7 +232,7 @@ contract AssetNFT is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, AccessControlUpgradeable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);

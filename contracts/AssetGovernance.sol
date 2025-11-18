@@ -2,6 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/utils/IVotesUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/IGovernorUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
@@ -39,10 +41,10 @@ contract AssetGovernance is
     }
 
     function initialize(
-        IVotes _token,
+        IVotesUpgradeable _token,
         TimelockControllerUpgradeable _timelock,
-        uint256 _votingDelay,
-        uint256 _votingPeriod,
+        uint48 _votingDelay,
+        uint32 _votingPeriod,
         uint256 _proposalThreshold,
         uint256 _quorumPercentage
     ) public initializer {
@@ -64,7 +66,7 @@ contract AssetGovernance is
     function votingDelay()
         public
         view
-        override(IGovernor, GovernorSettingsUpgradeable)
+        override(IGovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.votingDelay();
@@ -73,7 +75,7 @@ contract AssetGovernance is
     function votingPeriod()
         public
         view
-        override(IGovernor, GovernorSettingsUpgradeable)
+        override(IGovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.votingPeriod();
@@ -82,7 +84,7 @@ contract AssetGovernance is
     function quorum(uint256 blockNumber)
         public
         view
-        override(IGovernor, GovernorVotesQuorumFractionUpgradeable)
+        override(IGovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
         returns (uint256)
     {
         return super.quorum(blockNumber);
@@ -91,7 +93,7 @@ contract AssetGovernance is
     function state(uint256 proposalId)
         public
         view
-        override(Governor, GovernorTimelockControlUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (ProposalState)
     {
         return super.state(proposalId);
@@ -102,14 +104,14 @@ contract AssetGovernance is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public override(Governor, IGovernor) returns (uint256) {
+    ) public override(GovernorUpgradeable, IGovernorUpgradeable) returns (uint256) {
         return super.propose(targets, values, calldatas, description);
     }
 
     function proposalThreshold()
         public
         view
-        override(Governor, GovernorSettingsUpgradeable)
+        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.proposalThreshold();
@@ -121,7 +123,7 @@ contract AssetGovernance is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControlUpgradeable) {
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) {
         super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
@@ -130,14 +132,14 @@ contract AssetGovernance is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControlUpgradeable) returns (uint256) {
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint256) {
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
     function _executor()
         internal
         view
-        override(Governor, GovernorTimelockControlUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (address)
     {
         return super._executor();
@@ -146,7 +148,7 @@ contract AssetGovernance is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(Governor, GovernorTimelockControlUpgradeable, AccessControlUpgradeable)
+        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable, AccessControlUpgradeable)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
