@@ -1,3 +1,4 @@
+export type ViewType = 'GRID' | 'LIST'
 export type AssetStatus = 'PENDING' | 'VERIFIED' | 'ACTIVE' | 'INACTIVE' | 'REJECTED' | 'REDEEMED'
 export type AssetType = 'REAL_ESTATE' | 'COMMODITIES' | 'ART' | 'COLLECTIBLES' | 'VEHICLES' | 'OTHER'
 export type DocumentType =
@@ -69,6 +70,15 @@ export interface Asset {
   shares?: AssetShareholder[]
   documents?: AssetDocument[]
   transactions?: AssetTransaction[]
+  // Marketplace specific fields
+  pricePerShare?: string
+  marketCap?: string
+  volume24h?: string
+  priceChange24h?: string
+  yieldPotential?: string
+  isVerified?: boolean
+  verificationDate?: string | null
+  riskRating?: 'LOW' | 'MEDIUM' | 'HIGH'
 }
 
 export interface AssetPagination {
@@ -81,5 +91,54 @@ export interface AssetPagination {
 export interface PaginatedAssetsResponse {
   assets: Asset[]
   pagination: AssetPagination
+}
+
+// Marketplace specific types
+export interface AssetOrder {
+  id: string
+  assetId: string
+  userId: string
+  type: 'BUY' | 'SELL'
+  amount: number
+  pricePerShare: string
+  totalPrice: string
+  status: 'ACTIVE' | 'FILLED' | 'CANCELLED' | 'PARTIALLY_FILLED'
+  createdAt: string
+  updatedAt: string
+  expiresAt?: string | null
+}
+
+export interface AssetOffer {
+  id: string
+  assetId: string
+  buyerId: string
+  sellerId?: string | null
+  amount: number
+  offerPricePerShare: string
+  totalOfferPrice: string
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
+  message?: string | null
+  createdAt: string
+  expiresAt: string
+  responseAt?: string | null
+}
+
+export interface MarketplaceFilters {
+  assetType?: AssetType[]
+  status?: AssetStatus[]
+  location?: string[]
+  priceRange?: {
+    min: number
+    max: number
+  }
+  yieldRange?: {
+    min: number
+    max: number
+  }
+  riskRating?: ('LOW' | 'MEDIUM' | 'HIGH')[]
+  verificationStatus?: ('VERIFIED' | 'UNVERIFIED')[]
+  sortBy?: 'PRICE' | 'VOLUME' | 'YIELD' | 'CREATED_AT' | 'MARKET_CAP'
+  sortOrder?: 'ASC' | 'DESC'
+  viewType?: 'GRID' | 'LIST'
 }
 
