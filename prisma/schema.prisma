@@ -7,30 +7,48 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Enable referential integrity for production
+  referentialIntegrity = env("NODE_ENV") === "production" ? "prisma" : "prisma"
 }
 
-// User model with KYC tracking
+// User model with enhanced KYC/AML tracking
 model User {
-  id                String   @id @default(uuid())
-  walletAddress     String   @unique
-  email             String?  @unique
-  kycStatus         KYCStatus @default(PENDING)
+  id                String        @id @default(uuid())
+  walletAddress     String        @unique
+  email             String?       @unique
+  kycStatus         KYCStatus     @default(PENDING)
   kycVerifiedAt     DateTime?
   kycExpiresAt      DateTime?
-  riskLevel         RiskLevel @default(NONE)
-  transactionLimit  Decimal   @default(0)
-  isActive          Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  kycLevel          KYCLevel      @default(BASIC)
+  kycProviderId     String?       @unique // External ID from Onfido
+  kycLastChecked    DateTime?     // Last time KYC was verified
+  riskLevel         RiskLevel     @default(MEDIUM)
+  riskScore         Int           @default(50) // 0-100 risk score
+  transactionLimit  Decimal       @default(1000) // In USD
+  dailyLimit        Decimal       @default(10000) // In USD
+  country           String?       // ISO 3166-1 alpha-2 country code
+  isSanctioned      Boolean       @default(false)
+  isPep             Boolean       @default(false) // Politically Exposed Person
+  isActive          Boolean       @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   // Relations
-  ownedAssets       Asset[]   @relation("AssetOwner")
+  ownedAssets       Asset[]       @relation("AssetOwner")
   shares            Share[]
   transactions      Transaction[]
   documents         Document[]
+  kycChecks         KYCCheck[]
+  amlChecks         AMLCheck[]
+  complianceNotes   ComplianceNote[]
 
   @@index([walletAddress])
   @@index([kycStatus])
+  @@index([riskLevel])
+  @@index([isSanctioned])
+  @@index([isPep])
+  @@index([country])
 }
 
 // Asset model with lifecycle tracking
@@ -108,31 +126,110 @@ model Transaction {
   @@index([type])
 }
 
-// Document management model
+// Document model for IPFS metadata and KYC documents
 model Document {
-  id                String       @id @default(uuid())
+  id                String         @id @default(uuid())
   name              String
   type              DocumentType
+  documentType      KYC_DocumentType?  // Specific KYC document type
   ipfsHash          String
-  fileSize          Int
-  mimeType          String
-  version           Int          @default(1)
-  uploadedAt        DateTime     @default(now())
-  expiresAt         DateTime?
-  gatewayUrl        String?
-  pinStatus         PinStatus    @default(PINNED)
-  contentHash       String?
+  status            DocumentStatus @default(PENDING)
+  rejectionReason   String?
+  verifiedAt        DateTime?
+  verifiedBy        String?
+  metadata          Json?          // Additional metadata from Onfido
+  mimeType          String?        // MIME type of the document
+  fileSize          Int?           // File size in bytes
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   // Relations
-  userId            String
-  user              User         @relation(fields: [userId], references: [id])
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
   assetId           String?
-  asset             Asset?       @relation(fields: [assetId], references: [id])
+  asset             Asset?   @relation(fields: [assetId], references: [id])
+  kycCheckId        String?
+  kycCheck          KYCCheck? @relation(fields: [kycCheckId], references: [id])
 
   @@index([userId])
   @@index([assetId])
   @@index([type])
-  @@index([ipfsHash])
+  @@index([status])
+  @@index([documentType])
+}
+
+// KYC Check model to track verification attempts
+model KYCCheck {
+  id                String        @id @default(uuid())
+  checkId           String?       @unique // External ID from Onfido
+  checkType         KYC_CheckType
+  status            KYC_CheckStatus @default(PENDING)
+  result            KYC_CheckResult?
+  reportIds         String[]      // Array of report IDs from Onfido
+  webhookId         String?       // Webhook ID for updates
+  completedAt       DateTime?
+  expiresAt         DateTime?
+  notes             String?
+  metadata          Json?         // Raw response from Onfido
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  documents         Document[]
+  amlChecks         AMLCheck[]
+
+  @@index([userId])
+  @@index([checkId])
+  @@index([status])
+  @@index([checkType])
+}
+
+// AML Check model for sanctions screening
+model AMLCheck {
+  id                String        @id @default(uuid())
+  checkType         AML_CheckType
+  status            AML_CheckStatus @default(PENDING)
+  result            AML_CheckResult?
+  riskScore         Int?          // 0-100 risk score
+  matchCount        Int?          // Number of potential matches
+  screenedAt        DateTime?
+  completedAt       DateTime?
+  notes             String?
+  metadata          Json?         // Raw response from AML provider
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  kycCheckId        String?
+  kycCheck          KYCCheck?     @relation(fields: [kycCheckId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([checkType])
+  @@index([riskScore])
+}
+
+// Compliance notes for internal use
+model ComplianceNote {
+  id                String        @id @default(uuid())
+  title             String
+  content           String        @db.Text
+  isInternal        Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  createdById       String
+  createdBy         User          @relation("ComplianceNoteAuthor", fields: [createdById], references: [id])
+
+  @@index([userId])
+  @@index([isInternal])
 }
 
 // IPFS Upload tracking model
@@ -160,16 +257,29 @@ model IpfsUpload {
 
 // Enums
 enum KYCStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-  EXPIRED
+  NOT_STARTED    // User hasn't started KYC
+  PENDING        // KYC submitted, awaiting review
+  IN_REVIEW      // Manual review in progress
+  APPROVED       // KYC approved
+  REJECTED       // KYC rejected
+  EXPIRED        // KYC expired
+  SUSPENDED      // Account suspended for compliance reasons
+  LIMITED        // Limited functionality due to compliance
+}
+
+enum KYCLevel {
+  BASIC          // Email/phone verification only
+  VERIFIED       // Basic ID verification
+  ENHANCED       // Enhanced due diligence
+  INSTITUTIONAL  // For institutional investors
 }
 
 enum RiskLevel {
-  NONE
-  LOW
-  MEDIUM
+  LOW          // Minimal risk
+  MEDIUM       // Standard risk
+  HIGH         // Elevated risk
+  CRITICAL     // Requires immediate attention
+  NONE         // Not assessed yet
   HIGH
   BLOCKED
 }
